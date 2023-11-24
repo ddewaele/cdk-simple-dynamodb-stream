@@ -1,8 +1,47 @@
-# Welcome to your CDK TypeScript project
+# Simple DynamoDB Streams
 
-This is a blank project for CDK development with TypeScript.
+Simple CDK project that sets up a DynamoDB Table and a Lambda.
+Setups up a DynamoDB stream hooked up to a lambda.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+
+
+You can insert a single item
+```
+export TABLE_NAME=CdkSimpleDynamodbStreamStack-StreamingDataTable0F476BA9-CMNYI4IC45AG
+
+for i in {1..10}; do
+    aws dynamodb put-item \
+        --table-name $TABLE_NAME  \
+        --item \
+            "{\"id\": {\"S\": \"$i\"}, \"name\": {\"S\": \"User${i}\"}, \"metric\": {\"N\": \"4.321\"}, \"date\": {\"S\": \"2023-10-23T18:36:06.642Z\"}}"
+done
+```
+
+Or us the provided batch.sh to insert some records. 
+
+```
+for batch in {1..5}; do
+    # Start of the JSON request body
+    json='{"'$TABLE_NAME'": ['
+
+    for batch_item in {1..25}; do
+        # Construct each item in the batch
+
+        json+='{"PutRequest": {"Item": {"id": {"S": "'$batch-$batch_item'"}, "name": {"S": "User'$batch-$batch_item'"}, "metric": {"N": "4.321"}, "date": {"S": "2023-10-23T18:36:06.642Z"}}}},'
+    done
+
+    # Remove the last comma and close the JSON request body
+    json=$(echo $json | sed 's/,$//')
+    json+=']}'
+
+
+    echo $json
+
+    # Execute the batch write command
+    aws dynamodb batch-write-item --request-items "$json"
+done
+```
+
 
 ## Useful commands
 
